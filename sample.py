@@ -1,5 +1,5 @@
 import time
-from webwhatsapp import WhatsAPIDriver
+from whatsapi import WhatsAPIDriver
 print "waiting for QR"
 driver = WhatsAPIDriver()
 driver.first_run()

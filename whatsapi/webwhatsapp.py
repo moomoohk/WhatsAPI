@@ -38,7 +38,7 @@ class WhatsAPIDriver(object):
                 "user-data-dir=" + os.path.join(os.path.dirname(sys.argv[0]), "chrome_cache", self.username))
             self._driver = webdriver.Chrome(chrome_options=self._chrome_options)
 
-        self.wapi_functions = WapiJsWrapper(self._driver)
+        self.wapi_functions = WapiJsWrapper(self._driver, self)
 
         # Open page
         self._driver.get(URL)

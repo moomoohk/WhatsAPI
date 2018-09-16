@@ -8,7 +8,7 @@ You will need to install [Gecko Driver](https://github.com/mozilla/geckodriver) 
 ## Usage:
 - Import library
 
-` from webwhatsapp import WhatsAPIDriver `
+` from whatsapi import WhatsAPIDriver `
 
 - Instantiate driver and set username
 

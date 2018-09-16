@@ -1,4 +1,4 @@
-from objects.whatsapp_object import WhatsappObject, driver_needed
+from whatsapi.objects.whatsapp_object import WhatsappObject, driver_needed
 
 
 class Contact(WhatsappObject):
