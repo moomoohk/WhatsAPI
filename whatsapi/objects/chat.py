@@ -1,4 +1,4 @@
-from whatsapi.objects.whatsapp_object import WhatsappObject, driver_needed
+from whatsapp_object import WhatsappObject, driver_needed
 
 
 class ChatMetaClass(type):

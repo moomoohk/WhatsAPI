@@ -84,7 +84,23 @@ window.WAPI.createStore = function () {
             webpackJsonp([], {'parasite': (x, y, z) => getStore(z)}, 'parasite');
         })();
     }
-}
+};
+
+/**
+ * Take objects and resolve potentially recursive fields so it can be safely serialized.
+ * This process prevents Selenium from throwing "unknown error: Maximum call stack size exceeded"
+ *
+ * @param obj Object to "flatten"
+ */
+window.WAPI.flattenObject = function (obj) {
+    for (const property in obj) {
+        if (obj[property] && typeof(obj[property].all) !== "undefined") {
+            obj[property] = obj[property].all;
+        }
+    }
+
+    return obj;
+};
 
 /**
  * Fetches all contact objects from store
@@ -93,7 +109,9 @@ window.WAPI.createStore = function () {
  * @returns {Array|*} List of contacts
  */
 window.WAPI.getAllContacts = function (done) {
-    const contacts = Store.Contact.models.map((contact) => contact.all);
+    const contacts = Store.Contact.models
+        .filter((contact) => contact.all.isMyContact)
+        .map((contact) => WAPI.flattenObject(contact.all));
 
     if (done !== undefined) {
         done(contacts);
@@ -113,9 +131,9 @@ window.WAPI.getContact = function(id, done) {
     const found = Store.Contact.models.find((contact) => contact.id === id);
 
     if (done !== undefined) {
-        done(found.all);
+        done(WAPI.flattenObject(found.all));
     } else {
-        return found.all;
+        return WAPI.flattenObject(found.all);
     }
 };
 
@@ -126,7 +144,7 @@ window.WAPI.getContact = function(id, done) {
  * @returns {Array|*} List of chats
  */
 window.WAPI.getAllChats = function (done) {
-    const chats = Store.Chat.models.map((chat) => chat.all);
+    const chats = Store.Chat.models.map((chat) => WAPI.flattenObject(chat.all));
 
     if (done !== undefined) {
         done(chats);
@@ -146,9 +164,9 @@ window.WAPI.getChat = function(id, done) {
     const found = Store.Chat.models.find((chat) => chat.id === id);
 
     if (done !== undefined) {
-        done(found.all);
+        done(WAPI.flattenObject(found.all));
     } else {
-        return found.all;
+        return WAPI.flattenObject(found.all);
     }
 };
 
@@ -159,7 +177,7 @@ window.WAPI.getChat = function(id, done) {
  * @returns {Array|*} List of group metadata
  */
 window.WAPI.getAllGroupMetadata = function(done) {
-    const groupData = Store.GroupMetadata.models.map((groupData) => groupData.all);
+    const groupData = Store.GroupMetadata.models.map((groupData) => WAPI.flattenObject(groupData.all));
 
     if (done !== undefined) {
         done(groupData);
@@ -185,9 +203,9 @@ window.WAPI.getGroupMetadata = async function(id, done) {
     }
 
     if (done !== undefined) {
-        done(found);
+        done(WAPI.flattenObject(found));
     } else {
-        return found;
+        return WAPI.flattenObject(found);
     }
 };
 
@@ -213,7 +231,7 @@ window.WAPI._getGroupParticipants = async function(id) {
 window.WAPI.getGroupParticipantIDs = async function(id, done) {
     const participants = await WAPI._getGroupParticipants(id);
 
-    const ids = participants.map((participant) => participant.id);
+    const ids = participants.map((participant) => WAPI.flattenObject(participant.id));
 
     if (done !== undefined) {
         done(ids);
@@ -239,10 +257,17 @@ window.WAPI.getMe = function (done) {
 
     const rawMe = contacts.find((contact) => contact.all.isMe, contacts);
 
+    let all = rawMe.all;
+    for (const property in all) {
+        if (all[property] && typeof(all[property].all) !== "undefined") {
+            all[property] = all[property].all;
+        }
+    }
+
     if (done !== undefined) {
-        done(rawMe.all);
+        done(all);
     } else {
-        return {title: rawMe.all};
+        return all;
     }
 };
 

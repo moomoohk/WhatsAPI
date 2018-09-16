@@ -36,9 +36,10 @@ class WhatsAPIDriver(object):
             self._chrome_options = Options()
             self._chrome_options.add_argument(
                 "user-data-dir=" + os.path.join(os.path.dirname(sys.argv[0]), "chrome_cache", self.username))
+            self._chrome_options.add_argument("enable-logging")
             self._driver = webdriver.Chrome(chrome_options=self._chrome_options)
 
-        self.wapi_functions = WapiJsWrapper(self._driver, self)
+        self.wapi_functions = WapiJsWrapper(self._driver)
 
         # Open page
         self._driver.get(URL)
@@ -48,6 +49,9 @@ class WhatsAPIDriver(object):
 
         WebDriverWait(self._driver, 30).until(
             ec.invisibility_of_element_located((By.CSS_SELECTOR, Selectors.QR_CODE)))
+
+    def __del__(self):
+        self._driver.close()
 
     def first_run(self):
         if "Click to reload QR code" in self._driver.page_source:
@@ -68,6 +72,7 @@ class WhatsAPIDriver(object):
         :rtype: list[Chat]
         """
         all_contacts = self.wapi_functions.getAllContacts()
+
         return [Contact(contact, self) for contact in all_contacts]
 
     def get_all_chats(self):
@@ -112,7 +117,7 @@ class WhatsAPIDriver(object):
 
         assert contact, "Contact {0} not found".format(contact_id)
 
-        return Contact(contact)
+        return Contact(contact, self)
 
     def get_chat_from_id(self, chat_id):
         chats = filter(
