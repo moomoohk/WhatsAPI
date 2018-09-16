@@ -8,3 +8,6 @@ class ID(object):
 
     def __str__(self):
         return "{0}@{1}".format(self.user, self.server)
+
+    def __eq__(self, other):
+        return str(other) == str(self)
