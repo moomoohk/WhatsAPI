@@ -293,6 +293,12 @@ window.WAPI.getMe = function (done) {
     }
 };
 
+window.WAPI.getUnreadCount = function (chatID) {
+    const chat = WAPI.getChat(chatID);
+
+    return chat.unreadCount;
+};
+
 
 // FUNCTIONS UNDER THIS LINE ARE UNSTABLE
 
@@ -319,12 +325,10 @@ window.WAPI.getAllMessagesInChat = function (id, includeMe) {
         }
 
         if (messageObj.id.fromMe === false || includeMe) {
-            // const senderObj = messageObj.all.senderObj.all;
             let message = WAPI.flattenObject(messageObj.all);
             message.senderObj = WAPI.flattenObject(message.senderObj);
             message.chat = WAPI.flattenObject(message.chat.all);
             delete message.msgChunk;
-            // message.senderObj = message.senderObj.all;
             output.push(message);
         }
     }
@@ -336,6 +340,7 @@ window.WAPI.getAllMessagesInChat = function (id, includeMe) {
 };
 
 window.WAPI.sendMessage = function (id, message) {
+    console.log(message);
     const Chats = Store.Chat.models;
 
     for (const chat in Chats) {
@@ -383,7 +388,10 @@ window.WAPI.getUnreadMessagesInChat = function (id, includeMe, includeNotificati
         } else {
             messageObj.isNewMsg = false;
             // process it
-            let message = WAPI.flattenObject(messageObj);
+            let message = WAPI.flattenObject(messageObj.all);
+            message.senderObj = WAPI.flattenObject(message.senderObj);
+            message.chat = WAPI.flattenObject(message.chat.all);
+            delete message.msgChunk;
 
             // save processed message on result list
             if (message)

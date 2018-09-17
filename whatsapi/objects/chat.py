@@ -30,7 +30,11 @@ class Chat(WhatsappObject):
 
     @driver_needed
     def send_message(self, message):
-        return self._driver.wapi_functions.sendMessage(self.id, message)
+        return self._driver.wapi_functions.sendMessage(str(self.id), message)
+
+    @driver_needed
+    def unread_count(self):
+        return self._driver.wapi_functions.getUnreadCount(str(self.id))
 
 
 class UserChat(Chat):

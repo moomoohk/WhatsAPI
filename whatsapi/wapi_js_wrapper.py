@@ -63,7 +63,7 @@ class JsArg(object):
         :return: JS literal represented in a string
         """
         if type(self.obj) in [str, unicode]:
-            return repr(str(self.obj))
+            return repr(str(self.obj).format("utf8"))
 
         if type(self.obj) == bool:
             return str(self.obj).lower()
@@ -88,6 +88,8 @@ class JsFunction(object):
                 .format(self.function_name, ",".join([str(JsArg(arg)) for arg in args]))
         else:
             command = "return WAPI.{0}(arguments[0])".format(self.function_name)
+
+        print command
 
         try:
             return self.driver.execute_script(command)
