@@ -3,7 +3,8 @@ URL = "http://web.whatsapp.com"
 
 class Selectors(object):
     FIRST_RUN = "#wrapper"
-    QR_CODE = ".qrcode > img:nth-child(4)"
+    # QR_CODE = ".qrcode > img:nth-child(4)"
+    QR_CODE = "img[alt=\"Scan me!\"]"
     MAIN_PAGE = ".app.two"
     CHAT_LIST = ".infinite-list-viewport"
     MESSAGE_LIST = "#main > div > div:nth-child(1) > div > div.message-list"

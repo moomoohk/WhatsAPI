@@ -52,15 +52,24 @@ class WhatsAPIDriver(object):
 
         self._driver.set_script_timeout(5)
 
-        WebDriverWait(self._driver, 30).until(
-            ec.invisibility_of_element_located((By.CSS_SELECTOR, Selectors.QR_CODE)))
+        el = WebDriverWait(self._driver, 10).until(
+            ec.visibility_of_element_located(
+                (By.CSS_SELECTOR, "{0}, {1}".format(Selectors.QR_CODE, Selectors.MAIN_PAGE)))
+        )
+
+        # Detected QR code, give user time to pair and wait for main page
+        if el.tag_name == "img":
+            WebDriverWait(self._driver, 60).until(
+                ec.visibility_of_element_located(
+                    (By.CSS_SELECTOR, Selectors.MAIN_PAGE))
+            )
 
     def first_run(self):
         if "Click to reload QR code" in self._driver.page_source:
             self._reload_qr_code()
         qr = self._driver.find_element_by_css_selector(Selectors.QR_CODE)
         qr.screenshot(self.username + ".png")
-        WebDriverWait(self._driver, 30).until(
+        WebDriverWait(self._driver, 60).until(
             ec.invisibility_of_element_located((By.CSS_SELECTOR, Selectors.QR_CODE)))
 
     def get_contacts(self):
