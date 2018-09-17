@@ -64,6 +64,8 @@ class WhatsAPIDriver(object):
                     (By.CSS_SELECTOR, Selectors.MAIN_PAGE))
             )
 
+        self.wapi_functions.createStore()
+
     def first_run(self):
         if "Click to reload QR code" in self._driver.page_source:
             self._reload_qr_code()
