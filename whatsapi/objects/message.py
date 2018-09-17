@@ -72,7 +72,7 @@ class MediaMessage(Message):
         extension = mimetypes.guess_extension(self.mime)
         filename = "{0}{1}".format(self.raw_js_obj["__x_filehash"], extension)
 
-        with file(os.path.join(path, filename), "wb") as output:
+        with open(os.path.join(path, filename), "wb") as output:
             output.write(self.content.decode("base64"))
 
     def __repr__(self):

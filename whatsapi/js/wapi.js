@@ -128,7 +128,7 @@ window.WAPI.getAllContacts = function (done) {
  * @returns {T|*} Contact object
  */
 window.WAPI.getContact = function(id, done) {
-    const found = Store.Contact.models.find((contact) => contact.id === id);
+    const found = Store.Contact.models.find((contact) => contact.id.toString() === id);
 
     if (done !== undefined) {
         done(WAPI.flattenObject(found.all));
@@ -161,12 +161,24 @@ window.WAPI.getAllChats = function (done) {
  * @returns {T|*} Chat object
  */
 window.WAPI.getChat = function(id, done) {
-    const found = Store.Chat.models.find((chat) => chat.id === id);
+    let found = Store.Chat.models.find((chat) => chat.id.toString() === id);
+
+    if (found !== undefined) {
+        found = WAPI.flattenObject(found.all);
+
+        // Done to prevent stack overflow
+        // TODO: Find better way
+        delete found.msgChunks;
+        delete found.mute;
+        delete found.presence;
+        delete found.contact;
+        delete found.previewMessage;
+    }
 
     if (done !== undefined) {
-        done(WAPI.flattenObject(found.all));
+        done(found);
     } else {
-        return WAPI.flattenObject(found.all);
+        return found;
     }
 };
 
@@ -194,7 +206,7 @@ window.WAPI.getAllGroupMetadata = function(done) {
  * @returns {T|*} Group metadata object
  */
 window.WAPI.getGroupMetadata = async function(id, done) {
-    let found = Store.GroupMetadata.models.find((groupData) => groupData.id === id);
+    let found = Store.GroupMetadata.models.find((groupData) => groupData.id.toString() === id);
 
     if (found !== undefined) {
         if (found.stale) {
@@ -316,7 +328,7 @@ window.WAPI.sendMessage = function (id, message) {
         let temp = {};
         temp.name = Chats[chat].__x__formattedTitle;
         temp.id = Chats[chat].__x_id;
-        if (temp.id === id) {
+        if (temp.id.toString() === id) {
             Chats[chat].sendMessage(message);
 
             return true;

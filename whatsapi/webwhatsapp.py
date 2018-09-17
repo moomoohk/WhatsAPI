@@ -104,7 +104,7 @@ class WhatsAPIDriver(object):
         return unread_messages
 
     def get_all_messages_in_chat(self, chat, include_me=False):
-        message_objs = self.wapi_functions.getAllMessagesInChat(chat.chat_id, include_me)
+        message_objs = self.wapi_functions.getAllMessagesInChat(str(chat.id), include_me)
 
         messages = []
         for message in message_objs:
@@ -120,14 +120,11 @@ class WhatsAPIDriver(object):
         return Contact(contact, self)
 
     def get_chat_from_id(self, chat_id):
-        chats = filter(
-            lambda chat: chat["id"] == chat_id,
-            self.wapi_functions.getAllChats()
-        )
+        chat = self.wapi_functions.getChat(str(chat_id))
 
-        assert len(chats) == 1, "Chat {0} not found".format(chat_id)
+        assert chat, "Chat for id {0} not found".format(chat_id)
 
-        return Chat(chats[0], self)
+        return Chat(chat, self)
 
     def get_chat_from_phone_number(self, number):
         """
