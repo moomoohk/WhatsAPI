@@ -137,6 +137,16 @@ window.WAPI.getContact = function(id, done) {
     }
 };
 
+window.WAPI.getContactByName = function (name, done) {
+    const found = Store.Contact.models.find((contact) => contact.name === name);
+
+    if (done !== undefined) {
+        done(WAPI.flattenObject(found.all));
+    } else {
+        return WAPI.flattenObject(found.all);
+    }
+};
+
 /**
  * Fetches all chat objects from store
  *
@@ -287,7 +297,9 @@ window.WAPI.getMe = function (done) {
 // FUNCTIONS UNDER THIS LINE ARE UNSTABLE
 
 window.WAPI.getAllMessagesInChat = function (id, includeMe) {
-    const chat = WAPI._getChat(id);
+    id = typeof id === "string" ? id : id._serialized;
+    const chat = window.Store.Chat.get(id);
+    // let messages = chat.msgs.models;
 
     let output = [];
 
@@ -298,22 +310,28 @@ window.WAPI.getAllMessagesInChat = function (id, includeMe) {
         }
 
         const messageObj = messages[i];
+        messageObj.initialize();
 
-        if (messageObj.__x_isNotification) {
+        if (messageObj.isNotification) {
             // System message
             // (i.e. "Messages you send to this chat and calls are now secured with end-to-end encryption...")
             continue;
         }
 
         if (messageObj.id.fromMe === false || includeMe) {
-            let message = WAPI._serializeRawObj(messageObj);
-
+            // const senderObj = messageObj.all.senderObj.all;
+            let message = WAPI.flattenObject(messageObj.all);
+            message.senderObj = WAPI.flattenObject(message.senderObj);
+            message.chat = WAPI.flattenObject(message.chat.all);
+            delete message.msgChunk;
+            // message.senderObj = message.senderObj.all;
             output.push(message);
         }
     }
 
-    WAPI.lastRead[chat.__x_formattedTitle] = Math.floor(Date.now() / 1000);
+    WAPI.lastRead[chat.name] = Math.floor(Date.now() / 1000);
 
+    console.log(output);
     return output;
 };
 
@@ -338,8 +356,48 @@ window.WAPI.sendMessage = function (id, message) {
     return false;
 };
 
+window.WAPI.getUnreadMessagesInChat = function (id, includeMe, includeNotifications, done) {
+    // get chat and its messages
+
+    id = typeof id === "string" ? id : id._serialized;
+    const chat = window.Store.Chat.get(id);
+    let messages = chat.msgs.models;
+
+    // initialize result list
+    let output = [];
+
+    // look for unread messages, newest is at the end of array
+    for (let i = messages.length - 1; i >= 0; i--)
+    {
+        // system message: skip it
+        if (i === "remove") {
+            continue;
+        }
+
+        // get message
+        let messageObj = messages[i];
+
+        // found a read message: stop looking for others
+        if (typeof (messageObj.isNewMsg) !== "boolean" || messageObj.isNewMsg === false) {
+            continue;
+        } else {
+            messageObj.isNewMsg = false;
+            // process it
+            let message = WAPI.flattenObject(messageObj);
+
+            // save processed message on result list
+            if (message)
+                output.push(message);
+        }
+    }
+    // callback was passed: run it
+    if (done !== undefined) done(output);
+    // return result list
+    return output;
+};
+
 window.WAPI.getUnreadMessages = function () {
-    const chats = Store.Chat.models;
+    const chats = Store.Chat.models.map((chat) => WAPI.flattenObject(chat.all));
 
      WAPI.lastRead = {};
      for (let chat in chats) {
@@ -347,7 +405,7 @@ window.WAPI.getUnreadMessages = function () {
              continue;
          }
 
-         WAPI.lastRead[chats[chat].__x_formattedTitle] = Math.floor(Date.now() / 1000);
+         WAPI.lastRead[chats[chat].name] = Math.floor(Date.now() / 1000);
      }
 
     let output = [];
@@ -358,29 +416,29 @@ window.WAPI.getUnreadMessages = function () {
 
         let messageGroupObj = chats[chat];
 
-        let messageGroup = WAPI.serializeChat(messageGroupObj);
+        let messageGroup = WAPI.flattenObject(messageGroupObj);
         messageGroup.messages = [];
 
         const messages = messageGroupObj.msgs.models;
         for (let i = messages.length - 1; i >= 0; i--) {
             let messageObj = messages[i];
 
-            if (messageObj.__x_isNotification) {
+            if (messageObj.isNotification) {
                 // System message
                 // (i.e. "Messages you send to this chat and calls are now secured with end-to-end encryption...")
                 continue;
             }
 
-            if (messageObj.__x_t <= WAPI.lastRead[messageGroupObj.__x_formattedTitle] || messageObj.id.fromMe === true) {
+            if (messageObj.t <= WAPI.lastRead[messageGroupObj.name] || messageObj.id.fromMe === true) {
                 break;
             } else {
-                let message = WAPI._serializeRawObj(messageObj);
+                let message = WAPI.flattenObject(messageObj);
 
                 messageGroup.messages.push(message);
             }
         }
 
-        WAPI.lastRead[messageGroupObj.__x_formattedTitle] = Math.floor(Date.now() / 1000);
+        WAPI.lastRead[messageGroupObj.name] = Math.floor(Date.now() / 1000);
 
         if (messageGroup.messages.length > 0) {
             output.push(messageGroup);

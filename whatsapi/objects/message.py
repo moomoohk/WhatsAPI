@@ -18,13 +18,13 @@ class MessageMetaClass(type):
         :return: Instance of appropriate message type
         :rtype: MediaMessage | Message | MMSMessage | VCardMessage
         """
-        if js_obj["_raw"]["__x_isMedia"]:
+        if js_obj["isMedia"]:
             return type.__call__(MediaMessage, js_obj)
 
-        if js_obj["_raw"]["__x_isMMS"]:
+        if js_obj["isMMS"]:
             return type.__call__(MMSMessage, js_obj)
 
-        if js_obj["_raw"]["__x_type"] in ["vcard", "multi_vcard"]:
+        if js_obj["type"] in ["vcard", "multi_vcard"]:
             return type.__call__(VCardMessage, js_obj)
 
         return type.__call__(Message, js_obj)
@@ -40,10 +40,10 @@ class Message(object):
         :param js_obj: Raw JS message obj
         :type js_obj: dict
         """
-        self.sender = Chat(js_obj["sender"])
-        self.timestamp = datetime.fromtimestamp(js_obj["timestamp"])
-        self.content = js_obj["content"]
-        self.raw_js_obj = js_obj["_raw"]
+        self.sender = Chat(js_obj["senderObj"])
+        self.timestamp = datetime.fromtimestamp(js_obj["t"])
+        self.content = js_obj["body"]
+        self.raw_js_obj = js_obj
 
     def __repr__(self):
         try:
