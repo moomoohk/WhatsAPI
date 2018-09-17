@@ -52,7 +52,7 @@ class WhatsAPIDriver(object):
 
         self._driver.set_script_timeout(5)
 
-        el = WebDriverWait(self._driver, 10).until(
+        el = WebDriverWait(self._driver, 30).until(
             ec.visibility_of_element_located(
                 (By.CSS_SELECTOR, "{0}, {1}".format(Selectors.QR_CODE, Selectors.MAIN_PAGE)))
         )
