@@ -63,7 +63,7 @@ class JsArg(object):
         :return: JS literal represented in a string
         """
         if type(self.obj) in [str, unicode]:
-            return repr(str(self.obj).format("utf8"))
+            return repr(str(self.obj))
 
         if type(self.obj) == bool:
             return str(self.obj).lower()

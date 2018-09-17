@@ -105,6 +105,10 @@ class WhatsAPIDriver(object):
 
         return unread_messages
 
+    def get_unread_messages_in_chat(self, chat):
+        raw_messages = self.wapi_functions.getUnreadMessagesInChat(str(chat.id))
+        return [Message(message) for message in raw_messages]
+
     def get_all_messages_in_chat(self, chat, include_me=False):
         message_objs = self.wapi_functions.getAllMessagesInChat(str(chat.id), include_me)
 

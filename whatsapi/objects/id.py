@@ -1,7 +1,10 @@
 class ID(object):
     def __init__(self, js_obj):
-        self.user = js_obj["user"]
-        self.server = js_obj["server"]
+        if "remote" in js_obj:
+            self.user, self.server = js_obj["_serialized"].split("@")
+        else:
+            self.user = js_obj["user"]
+            self.server = js_obj["server"]
 
     def __repr__(self):
         return "<ID {0}>".format(str(self))

@@ -1,8 +1,10 @@
+import hashlib
 from datetime import datetime
 import mimetypes
 import os
 
-from chat import Chat
+from whatsapi.objects.id import ID
+from whatsapp_object import WhatsappObject
 
 
 class MessageMetaClass(type):
@@ -18,6 +20,8 @@ class MessageMetaClass(type):
         :return: Instance of appropriate message type
         :rtype: MediaMessage | Message | MMSMessage | VCardMessage
         """
+        js_obj["name"] = "Message"
+
         if js_obj["isMedia"]:
             return type.__call__(MediaMessage, js_obj)
 
@@ -27,10 +31,10 @@ class MessageMetaClass(type):
         if js_obj["type"] in ["vcard", "multi_vcard"]:
             return type.__call__(VCardMessage, js_obj)
 
-        return type.__call__(Message, js_obj)
+        return type.__call__(TextMessage, js_obj)
 
 
-class Message(object):
+class Message(WhatsappObject):
     __metaclass__ = MessageMetaClass
 
     def __init__(self, js_obj):
@@ -40,22 +44,35 @@ class Message(object):
         :param js_obj: Raw JS message obj
         :type js_obj: dict
         """
-        self.sender = Chat(js_obj["senderObj"])
+        super(Message, self).__init__(js_obj)
+
+        self.sender_id = ID(js_obj["sender"])
         self.timestamp = datetime.fromtimestamp(js_obj["t"])
-        self.content = js_obj["body"]
-        self.raw_js_obj = js_obj
+
+
+class TextMessage(Message):
+    def __init__(self, js_obj):
+        """
+        Constructor
+
+        :param js_obj: Raw JS message obj
+        :type js_obj: dict
+        """
+        super(TextMessage, self).__init__(js_obj)
+
+        self.body = js_obj["body"]
 
     def __repr__(self):
         try:
-            safe_content = self.content.decode("ascii")
+            safe_content = self.body.decode("ascii")
         except UnicodeEncodeError:
             safe_content = "(unicode content)"
 
         truncation_length = 20
         safe_content = safe_content[:truncation_length] + (safe_content[truncation_length:] and "...")
 
-        return "<Message - from {sender} at {timestamp}: {content}>".format(
-            sender=self.sender.name,
+        return "<TextMessage - from {sender} at {timestamp}: {content}>".format(
+            sender=self.sender_id,
             timestamp=self.timestamp,
             content=safe_content)
 
@@ -64,21 +81,26 @@ class MediaMessage(Message):
     def __init__(self, js_obj):
         super(MediaMessage, self).__init__(js_obj)
 
-        self.type = self.raw_js_obj["__x_type"]
-        self.size = self.raw_js_obj["__x_size"]
-        self.mime = self.raw_js_obj["__x_mimetype"]
+        self.type = js_obj["type"]
+        self.size = js_obj["size"]
+        self.mime = js_obj["mimetype"]
 
     def save_media(self, path):
         extension = mimetypes.guess_extension(self.mime)
-        filename = "{0}{1}".format(self.raw_js_obj["__x_filehash"], extension)
 
-        with open(os.path.join(path, filename), "wb") as output:
-            output.write(self.content.decode("base64"))
+        if self.type == "image":
+            data = self._js_obj["body"]
+            md5 = hashlib.md5(data).hexdigest()
+            filename = "{0}{1}".format(md5, extension)
+            with open(os.path.join(path, filename), "wb") as output:
+                output.write(self._js_obj["body"].decode("base64"))
+        else:
+            raise Exception("Currently unsupported type: {0}".format(self.type))
 
     def __repr__(self):
         return "<MediaMessage - {type} from {sender} at {timestamp}>".format(
             type=self.type,
-            sender=self.sender.name,
+            sender=self.sender_id,
             timestamp=self.timestamp
         )
 
@@ -95,7 +117,7 @@ class MMSMessage(MediaMessage):
     def __repr__(self):
         return "<MMSMessage - {type} from {sender} at {timestamp}>".format(
             type=self.type,
-            sender=self.sender.name,
+            sender=self.sender_id,
             timestamp=self.timestamp
         )
 
@@ -104,13 +126,13 @@ class VCardMessage(Message):
     def __init__(self, js_obj):
         super(VCardMessage, self).__init__(js_obj)
 
-        self.type = self.raw_js_obj["__x_type"]
-        self.contacts = self.raw_js_obj["__x_subtype"].encode("ascii", "ignore")
+        self.type = js_obj["type"]
+        self.contacts = js_obj["subtype"].encode("ascii", "ignore")
 
     def __repr__(self):
         return "<VCardMessage - {type} from {sender} at {timestamp} ({contacts})>".format(
             type=self.type,
-            sender=self.sender.name,
+            sender=self.sender_id,
             timestamp=self.timestamp,
             contacts=self.contacts
         )
